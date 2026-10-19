@@ -21,6 +21,5 @@ defineProps<{
 <style scoped>
 .entry-list-section {
   margin: 16px 16px 24px;
-  overflow: hidden;
 }
 </style>

@@ -20,7 +20,5 @@ defineProps<{
 <style scoped>
 .grouped-section {
   margin: 16px 16px 24px;
-  overflow: hidden;
-
 }
 </style>

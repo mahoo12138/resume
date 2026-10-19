@@ -43,7 +43,7 @@ watch(theme, (value) => {
 #resume-content {
   position: relative;
   width: 1024px;
-  min-width: 430px;
+  min-width: 0;
   margin: 64px auto 32px;
   background-color: var(--color-card-bg);
   border-radius: 5px;
@@ -81,7 +81,11 @@ watch(theme, (value) => {
     margin: 0 auto;
     border-radius: 0;
     box-shadow: none;
-    padding-bottom: 32px;
+    padding-bottom: 0;
+    overflow: visible;
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 </style>

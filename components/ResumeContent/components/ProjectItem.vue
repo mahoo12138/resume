@@ -1,9 +1,9 @@
 <template>
-  <article class="project-item">
+  <article class="project-item" :class="{ 'project-item--nested': nested }">
     <header class="project-item__header">
-      <h3 class="project-name">
+      <component :is="nested ? 'h4' : 'h3'" class="project-name">
         {{ entry.title }}
-      </h3>
+      </component>
       <div v-if="entry.meta.length" class="project-role">
         <span
           v-for="(metaItem, index) in entry.meta"
@@ -21,76 +21,108 @@
 <script lang="ts" setup>
 defineProps<{
   entry: ResumeEntry
+  nested?: boolean
 }>()
 </script>
 
 <style lang="less" scoped>
 .project-item {
+  margin-top: 20px;
+
+  & + & {
+    margin-top: 24px;
+  }
+
+  &--nested:first-child {
+    margin-top: 0;
+  }
+
   &__header {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 0 6px;
+    align-items: baseline;
+    margin-bottom: 8px;
 
     @media screen and (max-width: 720px) {
       flex-direction: column;
+      gap: 4px;
     }
   }
 
   &__content {
-    line-height: 30px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
     :deep(p) {
-      text-align: justify;
-      word-break: break-all;
+      margin: 0 0 8px;
     }
     :deep(li) {
       position: relative;
-      padding-left: 20px;
+      padding-left: 16px;
+
+      & + li {
+        margin-top: 5px;
+      }
     }
 
     :deep(li)::before {
       content: '';
       position: absolute;
-      left: 0.5em;
-      top: 0.8em;
+      left: 2px;
+      top: 0.95em;
       width: 4px;
       height: 4px;
       background: var(--color-primary);
       border-radius: 50%;
-      transform: translateY(50%);
+      transform: translateY(-50%);
     }
   }
 }
 
 .project-name {
-  font-size: 14px;
-  height: 22px;
-  font-weight: 500;
+  min-width: 0;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 600;
   color: var(--color-text-emphasis);
-  margin: 0 1px;
-  padding: 0 3px;
-  border-bottom: 1px solid var(--color-primary-soft-border);
-  box-shadow: inset 0 -8px var(--color-primary-soft);
-  //position: relative;
-  //text-indent: 20px;
-  //
-  //&::before {
-  //  content: "";
-  //  position: absolute;
-  //  left: 0.5em;
-  //  top: 50%;
-  //  transform: translateY(-50%);
-  //  width: 4px;
-  //  height: 4px;
-  //  background: #00b38a;
-  //  border-radius: 50%;
-  //}
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.project-item--nested .project-name {
+  font-size: 17px;
+}
+
+.project-item--nested .project-item__content {
+  :deep(h5) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 700;
+    color: var(--color-primary-strong);
+
+    &::after {
+      content: '';
+      flex: 1;
+      min-width: 20px;
+      border-top: 1px solid var(--color-section-line);
+    }
+  }
+
+  :deep(h5 ~ ul),
+  :deep(h5 ~ p) {
+    margin-left: 12px;
+  }
 }
 
 .project-role {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  min-width: 0;
   gap: 8px;
 
   @media screen and (max-width: 720px) {
@@ -98,20 +130,30 @@ defineProps<{
   }
 
   &__item {
-    display: inline-flex;
-    align-items: center;
-    font-size: 14px;
-    line-height: 16px;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.6;
     font-weight: 500;
-    color: var(--color-text-emphasis);
-    margin: 0 1px;
-    padding: 0 3px;
-    border-bottom: 1px solid var(--color-chip-border);
-    box-shadow: inset 0 -8px var(--color-chip-bg);
+    color: var(--color-text-subtle);
+    overflow-wrap: anywhere;
 
     :deep(a) {
       color: inherit;
     }
+  }
+}
+
+@media print {
+  .project-item__header,
+  .project-item__content :deep(h5) {
+    break-inside: avoid;
+    break-after: avoid;
+  }
+
+  .project-item__content :deep(p),
+  .project-item__content :deep(li) {
+    orphans: 2;
+    widows: 2;
   }
 }
 </style>

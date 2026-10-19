@@ -65,16 +65,13 @@ footer {
 }
 @media print {
   footer {
-    position: absolute;
-    z-index: 1;
     width: 1024px;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 13px;
-    line-height: 24px;
-    text-align: right;
+    margin: 0 auto 12px;
     padding: 0 48px;
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: right;
+    animation: none;
   }
   #resume-footer {
     display: none;

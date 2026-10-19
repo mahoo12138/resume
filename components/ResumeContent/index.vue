@@ -25,5 +25,10 @@ const sections = computed(() => resume.value.sections)
   @media screen and (max-width: 720px) {
     padding: 16px 8px 32px;
   }
+
+  @media print {
+    padding-bottom: 0;
+    overflow: visible;
+  }
 }
 </style>
