@@ -1,22 +1,4 @@
-const normalizePhone = (value: string) => value.trim()
-
-const getPhoneDigits = (value: string) => value.replace(/\D/g, '')
-
-const isValidPrintPhone = (value: string) => {
-  const digits = getPhoneDigits(value)
-
-  return digits.length === 11 || (digits.length === 13 && digits.startsWith('86'))
-}
-
-const getDialablePhone = (value: string) => {
-  const normalized = normalizePhone(value)
-
-  if (!isValidPrintPhone(normalized)) {
-    return ''
-  }
-
-  return normalized.replace(/[^\d+]/g, '')
-}
+import { normalizePhone, isValidPrintPhone, getDialablePhone } from '~/utils/printPhone'
 
 export const useResumePrintPhone = () => {
   const printPhone = useState<string>('resume-print-phone', () => '')

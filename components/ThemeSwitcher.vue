@@ -46,7 +46,7 @@
         </button>
       </div>
 
-      <button type="button" class="theme-switcher__print" @click="openPrintDialog">
+      <button ref="printTriggerRef" type="button" class="theme-switcher__print" @click="openPrintDialog">
         <span class="theme-switcher__print-mark">🖶</span>
         <span class="theme-switcher__print-copy">
           <strong>打印</strong>
@@ -59,28 +59,31 @@
   <Teleport to="body">
     <transition name="print-dialog">
       <div v-if="isPrintDialogOpen" class="print-dialog-backdrop" @click.self="closePrintDialog">
-        <section class="print-dialog" role="dialog" aria-modal="true" aria-labelledby="print-dialog-title">
-          <h2 id="print-dialog-title" class="print-dialog__title">打印前输入手机号</h2>
-          <p class="print-dialog__description">
-            页面仍保持遮盖状态，输入的手机号只会用于本次打印内容。
+        <section ref="printDialogRef" class="print-dialog" role="dialog" aria-modal="true" aria-labelledby="print-dialog-title" aria-describedby="print-dialog-description" @keydown.esc.stop.prevent="closePrintDialog" @keydown.tab="trapPrintFocus">
+          <h2 id="print-dialog-title" class="print-dialog__title">打印简历</h2>
+          <p id="print-dialog-description" class="print-dialog__description">
+            访客可直接打印公开脱敏版。本人生成投递版时，可输入完整手机号；号码仅用于本次打印，不上传、不保存，网页仍显示遮挡号码。
           </p>
           <label class="print-dialog__field" for="print-phone-input">
-            <span>手机号</span>
+            <span>完整手机号（仅投递版需要）</span>
             <input
               id="print-phone-input"
               ref="printPhoneInputRef"
               v-model="printPhoneInput"
               type="tel"
-              inputmode="numeric"
-              autocomplete="tel"
+              inputmode="tel"
+              autocomplete="off"
               placeholder="请输入完整手机号"
-              @keyup.enter="confirmPrint"
+              :aria-invalid="Boolean(printError)"
+              :aria-describedby="printError ? 'print-phone-error' : undefined"
+              @keyup.enter="printResume('private')"
             >
           </label>
-          <p v-if="printError" class="print-dialog__error">{{ printError }}</p>
+          <p v-if="printError" id="print-phone-error" class="print-dialog__error" role="alert">{{ printError }}</p>
           <div class="print-dialog__actions">
             <button type="button" class="print-dialog__button is-secondary" @click="closePrintDialog">取消</button>
-            <button type="button" class="print-dialog__button is-primary" @click="confirmPrint">确定并打印</button>
+            <button ref="publicPrintRef" type="button" class="print-dialog__button is-primary" :disabled="isPrinting" @click="printResume('public')">打印公开版</button>
+            <button type="button" class="print-dialog__button is-secondary" :disabled="isPrinting" @click="printResume('private')">打印投递版</button>
           </div>
         </section>
       </div>
@@ -97,6 +100,10 @@ const isPrintDialogOpen = ref(false)
 const printPhoneInput = ref('')
 const printError = ref('')
 const printPhoneInputRef = ref<HTMLInputElement | null>(null)
+const printTriggerRef = ref<HTMLButtonElement | null>(null)
+const publicPrintRef = ref<HTMLButtonElement | null>(null)
+const printDialogRef = ref<HTMLElement | null>(null)
+const isPrinting = ref(false)
 
 const activeTheme = computed(() => {
   return themes.find((item) => item.id === theme.value) ?? themes[0]
@@ -111,48 +118,76 @@ const focusPrintPhoneInput = () => {
   printPhoneInputRef.value?.focus()
 }
 
+const resetPrintData = () => {
+  clearPrintPhone()
+  printPhoneInput.value = ''
+  printError.value = ''
+}
+
 const openPrintDialog = async () => {
   isOpen.value = false
-  printError.value = ''
-  printPhoneInput.value = ''
+  resetPrintData()
   isPrintDialogOpen.value = true
   await nextTick()
-  focusPrintPhoneInput()
+  publicPrintRef.value?.focus()
 }
 
 const closePrintDialog = () => {
   isPrintDialogOpen.value = false
-  printError.value = ''
+  resetPrintData()
+  printTriggerRef.value?.focus()
 }
 
-const confirmPrint = async () => {
+const trapPrintFocus = (event: KeyboardEvent) => {
+  const controls = printDialogRef.value?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)')
+  if (!controls?.length) return
+  const first = controls[0]
+  const last = controls[controls.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last?.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first?.focus()
+  }
+}
+
+const printResume = async (mode: 'public' | 'private') => {
+  if (!import.meta.client || isPrinting.value) return
+  clearPrintPhone()
   const phone = normalizePhone(printPhoneInput.value)
 
-  if (!isValidPrintPhone(phone)) {
-    printError.value = '请输入完整手机号后再打印'
+  if (mode === 'private' && !isValidPrintPhone(phone)) {
+    printError.value = '打印投递版需要完整手机号；无需号码可选择打印公开版'
     await nextTick()
     focusPrintPhoneInput()
     return
   }
 
-  setPrintPhone(phone)
-  isPrintDialogOpen.value = false
+  if (mode === 'private') setPrintPhone(phone)
+  printPhoneInput.value = ''
   printError.value = ''
-  await nextTick()
+  isPrintDialogOpen.value = false
+  isPrinting.value = true
 
-  if (!import.meta.client) {
-    return
+  try {
+    await nextTick()
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()))
+    window.print()
+  } catch {
+    resetPrintData()
+    printError.value = '无法打开打印窗口，请重试或使用浏览器打印功能'
+    isPrintDialogOpen.value = true
+    await nextTick()
+    publicPrintRef.value?.focus()
+  } finally {
+    isPrinting.value = false
   }
-
-  await new Promise<void>((resolve) => {
-    window.requestAnimationFrame(() => resolve())
-  })
-
-  window.print()
 }
 
 const handleAfterPrint = () => {
-  clearPrintPhone()
+  resetPrintData()
+  printTriggerRef.value?.focus()
 }
 
 onMounted(() => {
@@ -161,8 +196,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('afterprint', handleAfterPrint)
-})
-</script>
+  resetPrintData()
+})</script>
 
 <style lang="less" scoped>
 .theme-switcher {
@@ -466,7 +501,9 @@ onBeforeUnmount(() => {
 }
 
 .print-dialog {
-  width: min(100%, 420px);
+  width: min(100%, 440px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   padding: 24px;
   border-radius: 24px;
   background: var(--color-card-bg);
@@ -530,7 +567,7 @@ onBeforeUnmount(() => {
     margin-top: 20px;
 
     @media screen and (max-width: 560px) {
-      flex-direction: column-reverse;
+      flex-direction: column;
     }
   }
 

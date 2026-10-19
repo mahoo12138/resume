@@ -9,9 +9,9 @@
       </div>
     </section>
     <section class="info-section">
-      <h2>{{ data?.gender }} / {{ data?.DOB.slice(0, 7) }}</h2>
-      <h3>{{ data?.education }} / {{ data?.education_desc }}</h3>
-      <h3>{{ data?.college }} · {{ data?.major }}</h3>
+      <p v-if="data?.experience" class="experience-summary">{{ data.experience }}</p>
+      <p v-if="data?.specialty" class="specialty-summary">{{ data.specialty }}</p>
+      <p v-if="educationSummary" class="education-summary">{{ educationSummary }}</p>
     </section>
     <section class="contact-section">
       <ul>
@@ -50,6 +50,9 @@
 const resume = useResumeData()
 const { printPhone, getDialablePhone } = useResumePrintPhone()
 const data = computed(() => resume.value.information)
+const educationSummary = computed(() => {
+  return [data.value?.education, data.value?.college, data.value?.major].filter(Boolean).join(' · ')
+})
 
 const phoneDisplayForPrint = computed(() => {
   return printPhone.value || data.value?.phone || ''
@@ -132,15 +135,24 @@ const phoneHref = computed(() => {
   .info-section {
     padding: 4px;
 
-    h2 {
-      margin: 2px 0;
-      font-size: 17px;
-      line-height: 32px;
+    p {
+      margin: 0;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
     }
 
-    h3 {
+    .experience-summary {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .specialty-summary {
       font-size: 15px;
-      line-height: 30px;
+    }
+
+    .education-summary {
+      margin-top: 4px;
+      font-size: 13px;
     }
   }
 

@@ -47,6 +47,8 @@ interface Information {
     name: string;
     nickname: string;
     job: string;
+    experience: string;
+    specialty: string;
     location: string;
     gender: string;
     DOB: string;

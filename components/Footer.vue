@@ -14,8 +14,8 @@
       </a>
     </footer>
   <footer id="print-footer">
-    <a class="footer-link" href="https://github.com/mahoo12138/resume" target="_blank">
-      <i class="icon icon-link"></i> 网页版简历：github.com/mahoo12138/resume
+    <a class="footer-link" href="https://resume.mahoo12138.cn" target="_blank">
+      <i class="icon icon-link"></i> 网页版简历：resume.mahoo12138.cn
     </a>
   </footer>
 </template>

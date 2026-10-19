@@ -295,6 +295,8 @@ export const parseResumeMarkdown = (source: string): ResumeData => {
       name: getFrontmatterString(data.name),
       nickname: getFrontmatterString(data.nickname),
       job: getFrontmatterString(data.job),
+      experience: getFrontmatterString(data.experience),
+      specialty: getFrontmatterString(data.specialty),
       location: getFrontmatterString(data.location),
       gender: getFrontmatterString(data.gender),
       DOB: dob,
