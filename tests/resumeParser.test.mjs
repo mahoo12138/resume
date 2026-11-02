@@ -100,7 +100,22 @@ test('raw HTML in rich text is escaped', () => {
   assert.match(result.sections[0].html, /&lt;script&gt;/)
 })
 
-test('current resume preserves two employers, three projects and a redacted contact', () => {
+test('renders ++text++ as an underline, nested with other inline marks', () => {
+  const result = parseResumeMarkdown('## 职业概述\n\n交付 ++7,600 余行代码++，含 ++**嵌套**++ 与 `++原样++`。')
+  const html = result.sections[0].html
+  assert.match(html, /<u>7,600 余行代码<\/u>/)
+  assert.match(html, /<u><strong>嵌套<\/strong><\/u>/)
+  assert.match(html, /<code>\+\+原样\+\+<\/code>/)
+})
+
+test('unpaired, empty and raw underline tags stay text', () => {
+  for (const source of ['未闭合 ++文字', '++ ++', '<u>标签</u>']) {
+    const result = parseResumeMarkdown(`## 职业概述\n\n${source}`)
+    assert.doesNotMatch(result.sections[0].html, /<u>/)
+  }
+})
+
+test('current resume preserves two employers, four projects and a redacted contact', () => {
   const content = readFileSync(new URL('../RESUME.md', import.meta.url), 'utf8')
   const result = parseResumeMarkdown(content)
   assert.match(result.information.phone, /x/)
@@ -110,8 +125,9 @@ test('current resume preserves two employers, three projects and a redacted cont
   assert.match(work.groups[0].entries[0].content, /多语言支持/)
   assert.match(work.groups[0].entries[0].content, /减少服务器崩溃/)
   const projects = result.sections.find(section => section.key === 'personal-projects')
-  assert.equal(projects.entries.length, 3)
+  assert.equal(projects.entries.length, 4)
+  assert.match(projects.entries[1].title, /Tynel/)
   const summary = result.sections.find(section => section.title === '职业概述')
   assert.match(summary.html, /个人项目/)
-  assert.doesNotMatch(summary.html, /Madoc|Pontis|Cormi/)
+  assert.doesNotMatch(summary.html, /Madoc|Pontis|Cormi|Tynel/)
 })

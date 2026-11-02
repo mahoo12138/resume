@@ -6,6 +6,52 @@ const markdown = new MarkdownIt({
   linkify: true,
 });
 
+const UNDERLINE_MARKER = "++";
+
+// `html: false` keeps raw HTML escaped, so underlines get their own marker
+// instead of `<u>` tags in the source.
+const registerUnderlineRule = (md: MarkdownIt) => {
+  md.inline.ruler.after("emphasis", "underline", (state, silent) => {
+    const contentStart = state.pos + UNDERLINE_MARKER.length;
+
+    if (state.src.slice(state.pos, contentStart) !== UNDERLINE_MARKER) {
+      return false;
+    }
+
+    const contentEnd = state.src.indexOf(UNDERLINE_MARKER, contentStart);
+
+    if (contentEnd === -1) {
+      return false;
+    }
+
+    const content = state.src.slice(contentStart, contentEnd);
+
+    if (!content.trim() || content.includes("\n")) {
+      return false;
+    }
+
+    if (!silent) {
+      state.pushPending();
+      state.push("underline_open", "u", 1);
+
+      const children: MarkdownIt.Token[] = [];
+      md.inline.parse(content, md, state.env, children);
+
+      for (const token of children) {
+        token.level += state.level;
+        state.tokens.push(token);
+      }
+
+      state.push("underline_close", "u", -1);
+    }
+
+    state.pos = contentEnd + UNDERLINE_MARKER.length;
+    return true;
+  });
+};
+
+registerUnderlineRule(markdown);
+
 type ParsedHeadingBlock = {
   title: string;
   body: string;

@@ -38,15 +38,5 @@ defineProps<{
       }
     }
   }
-  :deep(strong) {
-    font-size: 14px;
-    line-height: 16px;
-    font-weight: 500;
-    color: var(--color-text-emphasis);
-    margin: 0 1px;
-    padding: 0 3px;
-    border-bottom: 1px solid var(--color-chip-border);
-    box-shadow: inset 0 -8px var(--color-chip-bg);
-  }
 }
 </style>
