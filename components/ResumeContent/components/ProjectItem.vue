@@ -80,7 +80,9 @@ defineProps<{
 }
 
 .project-name {
-  min-width: 0;
+  // 中文标题的 min-content 只有一个字，允许压缩时会被长元信息挤成竖排
+  flex: none;
+  max-width: 100%;
   font-size: 18px;
   line-height: 1.5;
   font-weight: 600;
@@ -136,10 +138,6 @@ defineProps<{
     font-weight: 500;
     color: var(--color-text-subtle);
     overflow-wrap: anywhere;
-
-    :deep(a) {
-      color: inherit;
-    }
   }
 }
 

@@ -115,18 +115,75 @@ test('unpaired, empty and raw underline tags stay text', () => {
   }
 })
 
-test('current resume preserves two employers, four projects and a redacted contact', () => {
+test('comments hide whole entries, inline notes and CRLF sources', () => {
+  const body = [
+    '### 在线项目',
+    '',
+    '+ 仓库: https://example.com/a',
+    '',
+    '正文。',
+    '',
+    '<!-- ### 草稿项目',
+    '',
+    '+ 仓库: https://example.com/draft',
+    '',
+    '未上线。 -->',
+    '',
+    '### 下一个项目',
+    '',
+    '下一段。',
+  ].join('\n')
+  const source = `## 职业概述\n\n交付 7,600 行<!-- 内部备注 -->代码。\n\n## 个人项目\n\n${body}`
+
+  for (const [name, content] of [['LF', source], ['CRLF', source.replaceAll('\n', '\r\n')]]) {
+    const result = parseResumeMarkdown(content)
+    assert.match(result.sections[0].html, /交付 7,600 行代码。/)
+    const projects = result.sections[1]
+    assert.deepEqual(projects.entries.map(entry => entry.title), ['在线项目', '下一个项目'], name)
+    assert.doesNotMatch(JSON.stringify(result), /草稿|未上线|example\.com\/draft|!--/)
+  }
+})
+
+test('comment markers stay literal inside fences and when left open', () => {
+  const fenced = parseResumeMarkdown('## 职业概述\n\n```\n<!-- 示例 -->\n```')
+  assert.match(fenced.sections[0].html, /&lt;!-- 示例 --&gt;/)
+
+  const openComment = parseResumeMarkdown('## 职业概述\n\n正文 <!-- 忘了闭合')
+  assert.match(openComment.sections[0].html, /正文/)
+  assert.match(openComment.sections[0].html, /&lt;!--/)
+})
+
+test('a link before the colon keeps the whole meta line as prose', () => {
+  const source = [
+    '## 个人项目',
+    '',
+    '### 其他项目',
+    '',
+    '+ 仓库: [mahoo12138/tynel](https://github.com/mahoo12138/tynel)',
+    '+ [Numen](https://github.com/mahoo12138/numen)：Cordis 原生运行时',
+    '+ 角色: 独立开发',
+  ].join('\n')
+  const [entry] = parseResumeMarkdown(source).sections[0].entries
+  assert.equal(entry.meta.length, 3)
+  assert.equal(entry.meta[0].html, '<a href="https://github.com/mahoo12138/tynel">mahoo12138/tynel</a>')
+  assert.match(entry.meta[1].html, /^<a href="https:\/\/github\.com\/mahoo12138\/numen">Numen<\/a>：Cordis 原生运行时$/)
+  assert.equal(entry.meta[2].html, '独立开发')
+})
+
+test('current resume keeps two employers, three visible projects and a redacted contact', () => {
   const content = readFileSync(new URL('../RESUME.md', import.meta.url), 'utf8')
   const result = parseResumeMarkdown(content)
   assert.match(result.information.phone, /x/)
   const work = result.sections.find(section => section.kind === 'grouped-entries')
   assert.equal(work.groups.length, 2)
-  assert.match(work.groups[0].entries[0].content, /Hybrid H5/)
-  assert.match(work.groups[0].entries[0].content, /多语言支持/)
-  assert.match(work.groups[0].entries[0].content, /减少服务器崩溃/)
+  assert.match(work.groups[0].entries[0].content, /移动端业务 App/)
+  assert.match(work.groups[0].entries[1].content, /多语言支持/)
+  assert.match(work.groups[0].entries[1].content, /减少服务器崩溃/)
   const projects = result.sections.find(section => section.key === 'personal-projects')
-  assert.equal(projects.entries.length, 4)
-  assert.match(projects.entries[1].title, /Tynel/)
+  assert.equal(projects.entries.length, 3)
+  assert.equal(projects.entries[1].title, 'Tynel — TypeScript 原生编译器')
+  assert.deepEqual(projects.entries.map(entry => entry.title).filter(title => /Madoc|Pontis/.test(title)), [])
+  assert.doesNotMatch(JSON.stringify(result), /!--|&lt;!--|--&gt;/)
   const summary = result.sections.find(section => section.title === '职业概述')
   assert.match(summary.html, /个人项目/)
   assert.doesNotMatch(summary.html, /Madoc|Pontis|Cormi|Tynel/)

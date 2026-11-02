@@ -28,6 +28,20 @@ a {
 
 /* 正文行内标记：reset 抹掉了语义标签的默认样式，这里按站点主题重新定义 */
 .resume-content {
+  a {
+    color: var(--color-primary-strong);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-skip-ink: none;
+    text-underline-offset: 0.18em;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+      text-decoration-thickness: 2px;
+    }
+  }
+
   strong,
   b {
     color: var(--color-text-emphasis);

@@ -120,7 +120,16 @@ github: mahoo12138
 - 设计自有中间表示 NIR 作为编译器前后端唯一交接，后端可脱离源码回放；数字语义（求值顺序、负零、NaN）与 JS 逐条对齐并实测。
 - 后端以补丁注入 `cmd/compile`，把 NIR 直接构造成 Go 高层 IR 交给原有 SSA 与链接，不生成 Go 源码、不嵌 JS 引擎。
 
-### Madoc — 协同文档工作区
+### 其他项目
+
+- [Numen](https://github.com/mahoo12138/numen)：Cordis 原生、插件优先的个人自动化运行时 · 将万物插件化，连接为可编排的自动化；
+- [Havit](https://github.com/mahoo12138/havit)：个人与家庭全资产台账 · 管理物品、位置、消耗品、借出、凭证与备份;
+- [Madoc](https://github.com/mahoo12138/madoc)：面向个人和家庭的自部署协同工作区，支持 Markdown 文档与在线白板；
+- [Pontis](https://github.com/mahoo12138/pontis)：自部署书签同步平台，包含 Web 控制台、Chromium 扩展与 Go 服务端；
+- [TapType](https://github.com/mahoo12138/taptype)：以打字练习为核心的学习平台，包含错题复习、练习目标、成就和实时打字统计，以及词典管理；
+- [OmniStore](https://github.com/mahoo12138/omni-store)：以本地目录为数据源的自部署存储中心，统一管理文件、分享、图床、WebDAV 与可选 S3 接口。
+
+<!-- ### Madoc — 协同文档工作区
 
 + 仓库: [mahoo12138/madoc](https://github.com/mahoo12138/madoc)
 + 角色: 个人项目开发与维护
@@ -131,9 +140,9 @@ github: mahoo12138
 
 - 集成 Markdown 编辑器与白板两种内容引擎，提供统一目录树、文档大纲、成员权限及内容导入导出。
 - 基于 Yjs / WebSocket 实现 Markdown 多人编辑、远程光标与在线状态；将待同步更新按用户、工作区和文档持久化到 IndexedDB，通过服务端确认与重发处理断线恢复。
-- 使用 Go / SQLite 实现协同更新持久化、权限校验与内容版本管理，将前端嵌入服务端产物，提供单二进制及 Docker 部署。
+- 使用 Go / SQLite 实现协同更新持久化、权限校验与内容版本管理，将前端嵌入服务端产物，提供单二进制及 Docker 部署。 -->
 
-### Pontis — 书签同步平台
+<!-- ### Pontis — 书签同步平台
 
 + 仓库: [mahoo12138/pontis](https://github.com/mahoo12138/pontis)
 + 角色: 个人项目开发与维护
@@ -143,6 +152,10 @@ github: mahoo12138
 技术栈：**React / TypeScript / WXT / Dexie / Go / SQLite**。
 
 - 开发树形书签管理、框选与键盘多选、可配置新标签页；通过 pnpm workspace 在 Web 与扩展之间共享协议类型、API 客户端。
-- 在扩展侧通过 IndexedDB 持久化本地操作与待应用的服务端变更，结合增量日志、操作回执及事件回显识别，处理离线修改、重复请求与同步中断后的恢复。
+- 在扩展侧通过 IndexedDB 持久化本地操作与待应用的服务端变更，结合增量日志、操作回执及事件回显识别，处理离线修改、重复请求与同步中断后的恢复。 -->
+
+
+
+
 
 

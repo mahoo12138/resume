@@ -94,6 +94,88 @@ const SECTION_RULES: Record<string, ResumeSectionRule> = {
 
 const normalizeLineEndings = (source: string) => source.replace(/\r\n?/g, "\n");
 
+const COMMENT_OPEN = "<!--";
+const COMMENT_CLOSE = "-->";
+const FENCE_LINE = /^(\s*)(`{3,}|~{3,})(.*)$/;
+
+// Comments are stripped before any structural parsing so a commented-out
+// `### 标题` never becomes an entry. Only fully paired comments are removed —
+// an unterminated `<!--` keeps the rest of the file visible, because silently
+// dropping resume content is the worse failure mode.
+const stripHtmlComments = (source: string) => {
+  const lines = source.split("\n");
+  const result: string[] = [];
+  let openFence = "";
+  let openCommentLine = -1;
+  let inComment = false;
+
+  for (const [lineIndex, line] of lines.entries()) {
+    if (openFence) {
+      const closing = line.match(FENCE_LINE);
+      const isClosingFence =
+        !!closing &&
+        closing[2][0] === openFence[0] &&
+        closing[2].length >= openFence.length &&
+        !closing[3].trim();
+
+      if (isClosingFence) {
+        openFence = "";
+      }
+
+      result.push(line);
+      continue;
+    }
+
+    const openingFence = inComment ? null : line.match(FENCE_LINE);
+
+    if (openingFence) {
+      openFence = openingFence[2];
+      result.push(line);
+      continue;
+    }
+
+    let remaining = line;
+    let stripped = "";
+
+    while (remaining) {
+      if (inComment) {
+        const closeIndex = remaining.indexOf(COMMENT_CLOSE);
+
+        if (closeIndex === -1) {
+          break;
+        }
+
+        remaining = remaining.slice(closeIndex + COMMENT_CLOSE.length);
+        inComment = false;
+        openCommentLine = -1;
+        continue;
+      }
+
+      const openIndex = remaining.indexOf(COMMENT_OPEN);
+
+      if (openIndex === -1) {
+        stripped += remaining;
+        break;
+      }
+
+      stripped += remaining.slice(0, openIndex);
+      remaining = remaining.slice(openIndex + COMMENT_OPEN.length);
+      inComment = true;
+      openCommentLine = lineIndex;
+    }
+
+    result.push(stripped);
+  }
+
+  if (inComment && openCommentLine !== -1) {
+    for (let i = openCommentLine; i < lines.length; i += 1) {
+      result[i] = lines[i];
+    }
+  }
+
+  return result.join("\n");
+};
+
 const renderMarkdown = (source: string) => {
   const trimmed = source.trim();
 
@@ -114,15 +196,31 @@ const renderInlineMarkdown = (source: string) => {
   return markdown.renderInline(trimmed);
 };
 
-const renderMetaLine = (source: string) => {
-  const trimmed = source.trim();
-  const keyValueMatch = trimmed.match(/^([^:：]+)\s*([:：])\s*(.+)$/);
+const MARKDOWN_LINK = /\[[^\]]*\]\([^)]*\)/;
 
-  if (!keyValueMatch) {
-    return renderInlineMarkdown(trimmed);
+// `键: 值` 只在链接之外的冒号处切分 —— `[项目](https://…)` 里的冒号属于 URL scheme。
+const findMetaSeparator = (line: string) => {
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+
+    if ((char === ":" || char === "：") && line.slice(index + 1, index + 3) !== "//") {
+      return index;
+    }
   }
 
-  const [, , , value] = keyValueMatch;
+  return -1;
+};
+
+const renderMetaLine = (source: string) => {
+  const trimmed = source.trim();
+  const separatorIndex = findMetaSeparator(trimmed);
+  const key = separatorIndex === -1 ? "" : trimmed.slice(0, separatorIndex).trim();
+  const value = separatorIndex === -1 ? "" : trimmed.slice(separatorIndex + 1).trim();
+
+  // 键里带链接说明整行是叙述（`[项目](url)：说明`），按键值切分会连链接一起丢掉。
+  if (!key || !value || MARKDOWN_LINK.test(key)) {
+    return renderInlineMarkdown(trimmed);
+  }
 
   return renderInlineMarkdown(value);
 };
@@ -330,7 +428,7 @@ const parseSections = (content: string): ResumeSection[] => {
 };
 
 export const parseResumeMarkdown = (source: string): ResumeData => {
-  const normalizedSource = normalizeLineEndings(source);
+  const normalizedSource = stripHtmlComments(normalizeLineEndings(source));
   const { data, content } = parseFrontmatter(normalizedSource);
   const dob = getFrontmatterString(data.dob);
   const graduated = getFrontmatterString(data.Graduated);
