@@ -100,7 +100,7 @@ test('raw HTML in rich text is escaped', () => {
   assert.match(result.sections[0].html, /&lt;script&gt;/)
 })
 
-test('current resume preserves two employers, two projects and a redacted contact', () => {
+test('current resume preserves two employers, three projects and a redacted contact', () => {
   const content = readFileSync(new URL('../RESUME.md', import.meta.url), 'utf8')
   const result = parseResumeMarkdown(content)
   assert.match(result.information.phone, /x/)
@@ -110,8 +110,8 @@ test('current resume preserves two employers, two projects and a redacted contac
   assert.match(work.groups[0].entries[0].content, /多语言支持/)
   assert.match(work.groups[0].entries[0].content, /减少服务器崩溃/)
   const projects = result.sections.find(section => section.key === 'personal-projects')
-  assert.equal(projects.entries.length, 2)
+  assert.equal(projects.entries.length, 3)
   const summary = result.sections.find(section => section.title === '职业概述')
   assert.match(summary.html, /个人项目/)
-  assert.doesNotMatch(summary.html, /Madoc|Pontis/)
+  assert.doesNotMatch(summary.html, /Madoc|Pontis|Cormi/)
 })
