@@ -1,6 +1,23 @@
 <template>
   <aside class="theme-switcher">
     <div class="theme-switcher__stack">
+      <transition name="back-top">
+        <button
+          v-if="isBackToTopVisible"
+          type="button"
+          class="theme-switcher__top"
+          @click="scrollToTop"
+        >
+          <span class="theme-switcher__top-mark">
+            <i class="icon icon-arrow-up" />
+          </span>
+          <span class="theme-switcher__top-copy">
+            <strong>顶部</strong>
+            <small>回到页首</small>
+          </span>
+        </button>
+      </transition>
+
       <div class="theme-switcher__picker" :class="{ 'is-open': isOpen }">
         <transition name="theme-panel">
           <div v-if="isOpen" id="theme-switcher-panel" class="theme-switcher__panel">
@@ -104,6 +121,7 @@ const printTriggerRef = ref<HTMLButtonElement | null>(null)
 const publicPrintRef = ref<HTMLButtonElement | null>(null)
 const printDialogRef = ref<HTMLElement | null>(null)
 const isPrinting = ref(false)
+const isBackToTopVisible = ref(false)
 
 const activeTheme = computed(() => {
   return themes.find((item) => item.id === theme.value) ?? themes[0]
@@ -190,12 +208,40 @@ const handleAfterPrint = () => {
   printTriggerRef.value?.focus()
 }
 
+let scrollCheckFrame = 0
+
+const updateBackToTopVisibility = () => {
+  scrollCheckFrame = 0
+  const doc = document.documentElement
+  const scrollable = doc.scrollHeight - doc.clientHeight
+  isBackToTopVisible.value = scrollable > 0 && window.scrollY / scrollable >= 0.5
+}
+
+const requestScrollCheck = () => {
+  if (!scrollCheckFrame) {
+    scrollCheckFrame = window.requestAnimationFrame(updateBackToTopVisibility)
+  }
+}
+
+const scrollToTop = () => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
+}
+
 onMounted(() => {
   window.addEventListener('afterprint', handleAfterPrint)
+  window.addEventListener('scroll', requestScrollCheck, { passive: true })
+  window.addEventListener('resize', requestScrollCheck)
+  requestScrollCheck()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('afterprint', handleAfterPrint)
+  window.removeEventListener('scroll', requestScrollCheck)
+  window.removeEventListener('resize', requestScrollCheck)
+  if (scrollCheckFrame) {
+    window.cancelAnimationFrame(scrollCheckFrame)
+  }
   resetPrintData()
 })</script>
 
@@ -245,13 +291,16 @@ onBeforeUnmount(() => {
 
   &__toggle,
   &__option,
-  &__print {
+  &__print,
+  &__top {
     border: none;
     cursor: pointer;
     font: inherit;
   }
 
-  &__toggle {
+  &__toggle,
+  &__print,
+  &__top {
     display: inline-flex;
     align-items: center;
     gap: 12px;
@@ -281,32 +330,7 @@ onBeforeUnmount(() => {
   }
 
   &__print {
-    display: inline-flex;
-    align-items: center;
     gap: 8px;
-    min-width: 120px;
-    padding: 12px 14px;
-    border-radius: 18px;
-    background: var(--color-switcher-bg);
-    border: 1px solid var(--color-switcher-border);
-    color: var(--color-text-emphasis);
-    box-shadow: 0 16px 40px var(--color-switcher-shadow);
-    backdrop-filter: blur(16px);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-
-    &:hover {
-      transform: translateX(-2px);
-      border-color: var(--color-primary-soft-border);
-      box-shadow: 0 18px 44px var(--color-switcher-shadow);
-    }
-
-    @media screen and (max-width: 720px) {
-      min-width: 108px;
-
-      &:hover {
-        transform: none;
-      }
-    }
   }
 
   &__print-mark {
@@ -324,7 +348,22 @@ onBeforeUnmount(() => {
     letter-spacing: 0.08em;
   }
 
-  &__print-copy {
+  &__top-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: 12px;
+  }
+
+  &__toggle-copy,
+  &__print-copy,
+  &__top-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -349,24 +388,6 @@ onBeforeUnmount(() => {
     border-radius: 999px;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-section-bg) 100%);
     box-shadow: 0 0 0 3px var(--color-primary-soft);
-  }
-
-  &__toggle-copy {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    line-height: 1.2;
-
-    strong {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    small {
-      margin-top: 3px;
-      font-size: 12px;
-      color: var(--color-text-subtle);
-    }
   }
 
   &__panel {
@@ -471,6 +492,17 @@ onBeforeUnmount(() => {
 .theme-panel-leave-to {
   opacity: 0;
   transform: translateY(-50%) translateX(8px);
+}
+
+.back-top-enter-active,
+.back-top-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.back-top-enter-from,
+.back-top-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 @media screen and (max-width: 720px) {
